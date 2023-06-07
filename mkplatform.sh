@@ -15,8 +15,43 @@ C=$(pwd)
 A=../armbian
 P="radxa-zero"
 B="current"
-T="radxa-zero"
+#T="radxa-zero"
 K="meson64"
+
+
+DELAY=3 # Number of seconds to display results
+while true; do
+  clear
+  cat << _EOF_
+Please select the Radxa Zero board you wish to build the platform files for:
+
+1. Radxa Zero
+2. Radxa Zero2
+3. Quit
+
+_EOF_
+
+  read -p "Enter selection [1-3] > "
+  if [[ $REPLY =~ ^[1-3]$ ]]; then
+    case $REPLY in
+      1)
+        T="radxa-zero"
+        break
+        ;; 
+      2)
+        T="radxa-zero2"
+        break
+        ;;
+      3)
+        echo "Platform build interrupted"
+        exit
+        ;;
+    esac
+  else
+    echo "Invalid entry, please select either 1, 2 or quit with 3"
+    sleep $DELAY
+  fi
+done
 
 # Make sure we grab the right version
 ARMBIAN_VERSION=$(cat ${A}/VERSION)
@@ -26,7 +61,11 @@ echo "Adding custom patches"
 ls "${C}/patches/"
 mkdir -p "${A}"/userpatches/kernel/"${K}"-"${B}"/
 rm -rf "${A}"/userpatches/kernel/"${K}"-"${B}"/*.patch
-cp "${C}"/patches/*.patch "${A}"/userpatches/kernel/"${K}"-"${B}"/
+FILES="${C}"/patches/*.patch
+shopt -s nullglob
+for file in $FILES; do
+  cp $file "${A}"/userpatches/kernel/"${K}"-"${B}"/
+done
 
 # Custom kernel Config
 if [ -e "${C}"/kernel-config/linux-"${K}"-"${B}".config ]
@@ -46,66 +85,70 @@ fi
 
 cd ${A}
 ARMBIAN_HASH=$(git rev-parse --short HEAD)
-echo "Building for $P -- with Armbian ${ARMBIAN_VERSION} -- $B"
+echo "Building for $T -- with Armbian ${ARMBIAN_VERSION} -- $B"
 
-./compile.sh build BOARD=${T} BRANCH=${B} BUILD_DESKTOP=no BUILD_MINIMAL=yes KERNEL_CONFIGURE=yes RELEASE=jammy "${armbian_extra_flags[@]}"
-
-#./compile.sh BOARD="${T}" BRANCH="${B}" RELEASE=buster KERNEL_CONFIGURE=yes EXTERNAL=yes BUILD_KSRC=no BUILD_DESKTOP=no BUILD_ONLY=u-boot,kernel,armbian-firmware "${armbian_extra_flags[@]}"
+./compile.sh build BOARD=${T} BRANCH=${B} CLEAN_LEVEL=images,debs RELEASE=buster BUILD_ONLY=kernel,u-boot,armbian-firmware BUILD_DESKTOP=no BUILD_MINIMAL=no EXTERNAL=no BUILD_KSRC=no EXPERT=yes "${armbian_extra_flags[@]}"
+#./compile.sh BOARD=${T} BRANCH=${B} kernel-patch 
 
 echo "Done!"
 
 cd "${C}"
-echo "Creating platform ${P} files"
-[[ -d ${P} ]] && rm -rf "${P}"
-mkdir -p "${P}"/u-boot
-mkdir -p "${P}"/lib/firmware
-mkdir -p "${P}"/boot/overlay-user
+echo "Creating platform ${T} files"
+[[ -d ${T} ]] && rm -rf "${T}"
+mkdir -p "${T}"/u-boot
+mkdir -p "${T}"/lib/firmware
+mkdir -p "${T}"/boot/overlay-user
+mkdir -p "${T}"/var/lib/alsa
+
+# Copy asound.state
+cp "${A}/packages/blobs/asound.state/asound.state.${T}" "${T}"/var/lib/alsa/asound.state
+
 # Keep a copy for later just in case
 cp "${A}/output/debs/linux-headers-${B}-${K}_${ARMBIAN_VERSION}"* "${C}"
 
-dpkg-deb -x "${A}/output/debs/linux-dtb-${B}-${K}_${ARMBIAN_VERSION}"*.deb "${P}"
-dpkg-deb -x "${A}/output/debs/linux-image-${B}-${K}_${ARMBIAN_VERSION}"*.deb "${P}"
-dpkg-deb -x "${A}/output/debs/linux-u-boot-${T}-${B}_${ARMBIAN_VERSION}"*.deb "${P}"
-dpkg-deb -x "${A}/output/debs/armbian-firmware_${ARMBIAN_VERSION}"*.deb "${P}"
+dpkg-deb -x "${A}/output/debs/linux-dtb-${B}-${K}_${ARMBIAN_VERSION}"*.deb "${T}"
+dpkg-deb -x "${A}/output/debs/linux-image-${B}-${K}_${ARMBIAN_VERSION}"*.deb "${T}"
+dpkg-deb -x "${A}/output/debs/linux-u-boot-${T}-${B}_${ARMBIAN_VERSION}"*.deb "${T}"
+dpkg-deb -x "${A}/output/debs/armbian-firmware_${ARMBIAN_VERSION}"*.deb "${T}"
 
 # Copy bootloader stuff
-cp "${P}"/usr/lib/linux-u-boot-${B}-${T}*/u-boot.bin "${P}/u-boot"
-cp "${P}"/usr/lib/u-boot/platform_install.sh "${P}/u-boot"
+cp "${T}"/usr/lib/linux-u-boot-${B}-${T}*/u-boot.bin "${T}/u-boot/"
+cp "${T}"/usr/lib/u-boot/platform_install.sh "${T}/u-boot/"
 
-mv "${P}"/boot/dtb* "${P}"/boot/dtb
-mv "${P}"/boot/vmlinuz* "${P}"/boot/Image
+mv "${T}"/boot/dtb* "${T}"/boot/dtb
+mv "${T}"/boot/vmlinuz* "${T}"/boot/Image
 
 # Clean up unneeded parts
-rm -rf "${P}/lib/firmware/.git"
-rm -rf "${P:?}/usr" "${P:?}/etc"
+rm -rf "${T}/lib/firmware/.git"
+rm -rf "${T:?}/usr" "${T:?}/etc"
 
 # Compile and copy over overlay(s) files
-for dts in "${C}"/overlay-user/overlays-"${P}"/*.dts; do
+for dts in "${C}"/overlay-user/overlays-"${T}"/*.dts; do
   dts_file=${dts%%.*}
   if [ -s "${dts_file}.dts" ]
   then
     echo "Compiling ${dts_file}"
     dtc -O dtb -o "${dts_file}.dtbo" "${dts_file}.dts"
-    cp "${dts_file}.dtbo" "${P}"/boot/overlay-user
+    cp "${dts_file}.dtbo" "${T}"/boot/overlay-user
   fi
 done
 
 # Copy and compile boot script
-cp "${A}"/config/bootscripts/boot-"${K}".cmd "${P}"/boot/boot.cmd
-mkimage -C none -A arm -T script -d "${P}"/boot/boot.cmd "${P}"/boot/boot.scr
+cp "${A}"/config/bootscripts/boot-"${K}".cmd "${T}"/boot/boot.cmd
+mkimage -C none -A arm -T script -d "${T}"/boot/boot.cmd "${T}"/boot/boot.scr
 
 # Signal mainline kernel
-touch "${P}"/boot/.next
+touch "${T}"/boot/.next
 
 # Prepare boot parameters
-cp "${C}"/bootparams/"${T}".armbianEnv.txt "${P}"/boot/armbianEnv.txt
+cp "${C}"/bootparams/"${T}".armbianEnv.txt "${T}"/boot/armbianEnv.txt
 
 echo "Creating device tarball.."
-tar cJf "${P}_${B}.tar.xz" "$P"
+tar cJf "${T}_${B}.tar.xz" "$T"
 
 echo "Renaming tarball for Build scripts to pick things up"
-mv "${P}_${B}.tar.xz" "${P}.tar.xz"
-KERNEL_VERSION="$(basename ./"${P}"/boot/config-*)"
+mv "${T}_${B}.tar.xz" "${T}.tar.xz"
+KERNEL_VERSION="$(basename ./"${T}"/boot/config-*)"
 KERNEL_VERSION=${KERNEL_VERSION#*-}
 echo "Creating a version file Kernel: ${KERNEL_VERSION}"
 cat <<EOF >"${C}/version"
@@ -116,4 +159,4 @@ KERNEL_VERSION=${KERNEL_VERSION}
 EOF
 
 echo "Cleaning up.."
-rm -rf "${P}"
+rm -rf "${T}"

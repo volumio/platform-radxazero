@@ -1,0 +1,9 @@
+verbosity=7
+bootlogo=true
+overlay_prefix=amlogic
+fdtfile=amlogic/meson-g12b-radxa-zero2.dtb
+console=both
+usbstoragequirks=0x2537:0x1066:u,0x2537:0x1068:u
+extraargs=imgpart=UUID= bootpart=UUID= datapart=UUID= bootconfig=armbianEnv.txt imgfile=/volumio_current.sqsh net.ifnames=0
+overlays=
+user_overlays=

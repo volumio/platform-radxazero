@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Igor Pecovnik <igor.pecovnik@****l.com>
+Date: Tue, 6 Jun 2023 16:12:40 +0200
+Subject: Patching kernel meson64 files sound/usb/quirks.c
+
+Signed-off-by: Igor Pecovnik <igor.pecovnik@****l.com>
+---
+ sound/usb/quirks.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/sound/usb/quirks.c b/sound/usb/quirks.c
+index 3ecd1ba7fd4b..8a4ee1ff354d 100644
+--- a/sound/usb/quirks.c
++++ b/sound/usb/quirks.c
+@@ -2195,10 +2195,16 @@ static const struct usb_audio_quirk_flags_table quirk_flags_table[] = {
+ 		   QUIRK_FLAG_DSD_RAW),
+ 	VENDOR_FLG(0x3842, /* EVGA */
+ 		   QUIRK_FLAG_DSD_RAW),
+ 	VENDOR_FLG(0xc502, /* HiBy devices */
+ 		   QUIRK_FLAG_DSD_RAW),
++	VENDOR_FLG(0x2fc6, /* E1DA #9038D  */
++		   QUIRK_FLAG_DSD_RAW),
++	VENDOR_FLG(0x22e1, /* TempoTec Sonata BHD */
++		   QUIRK_FLAG_DSD_RAW),
++        VENDOR_FLG(0x22e8,  /* Cambridge */
++		   QUIRK_FLAG_DSD_RAW),
+ 
+ 	{} /* terminator */
+ };
+ 
+ void snd_usb_init_quirk_flags(struct snd_usb_audio *chip)
+-- 
+Created with Armbian build tools https://github.com/armbian/build
+
