@@ -59,6 +59,7 @@ ARMBIAN_VERSION=$(cat ${A}/VERSION)
 # Custom patches
 echo "Adding custom patches"
 ls "${C}/patches/"
+
 mkdir -p "${A}"/userpatches/kernel/"${K}"-"${B}"/
 rm -rf "${A}"/userpatches/kernel/"${K}"-"${B}"/*.patch
 FILES="${C}"/patches/*.patch
@@ -88,6 +89,7 @@ ARMBIAN_HASH=$(git rev-parse --short HEAD)
 echo "Building for $T -- with Armbian ${ARMBIAN_VERSION} -- $B"
 
 ./compile.sh build BOARD=${T} BRANCH=${B} CLEAN_LEVEL=images,debs RELEASE=buster BUILD_ONLY=kernel,u-boot,armbian-firmware BUILD_DESKTOP=no BUILD_MINIMAL=no EXTERNAL=no BUILD_KSRC=no EXPERT=yes "${armbian_extra_flags[@]}"
+
 #./compile.sh BOARD=${T} BRANCH=${B} kernel-patch 
 
 echo "Done!"
@@ -99,9 +101,14 @@ mkdir -p "${T}"/u-boot
 mkdir -p "${T}"/lib/firmware
 mkdir -p "${T}"/boot/overlay-user
 mkdir -p "${T}"/var/lib/alsa
+mkdir -p "${T}"/var/lib/alsa
+mkdir -p "${T}"/volumio/app/audio_interface/alsa_controller
 
 # Copy asound.state
-cp "${A}/packages/blobs/asound.state/asound.state.${T}" "${T}"/var/lib/alsa/asound.state
+cp "${C}/audio-routing/${T}-asound.state" "${T}"/var/lib/alsa
+
+# Copy radxa card profiles
+cp "${C}/audio-routing/cards.json" "${T}"/volumio/app/audio_interface/alsa_controller
 
 # Keep a copy for later just in case
 cp "${A}/output/debs/linux-headers-${B}-${K}_${ARMBIAN_VERSION}"* "${C}"
