@@ -102,13 +102,13 @@ mkdir -p "${T}"/lib/firmware
 mkdir -p "${T}"/boot/overlay-user
 mkdir -p "${T}"/var/lib/alsa
 mkdir -p "${T}"/var/lib/alsa
-mkdir -p "${T}"/volumio/app/audio_interface/alsa_controller
+mkdir -p "${T}"/volumio/app/plugins/audio_interface/alsa_controller
 
 # Copy asound.state
-cp "${C}/audio-routing/${T}-asound.state" "${T}"/var/lib/alsa
+cp "${C}/audio-routing/${T}-asound.state" "${T}"/var/lib/alsa/asound.state
 
 # Copy radxa card profiles
-cp "${C}/audio-routing/cards.json" "${T}"/volumio/app/audio_interface/alsa_controller
+cp "${C}/audio-routing/cards.json" "${T}"/volumio/app/plugins/audio_interface/alsa_controller
 
 # Keep a copy for later just in case
 cp "${A}/output/debs/linux-headers-${B}-${K}_${ARMBIAN_VERSION}"* "${C}"
