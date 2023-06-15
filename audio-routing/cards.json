@@ -1,0 +1,6 @@
+{
+  "cards": [
+     {"name": "RADXA-ZERO", "multidevice": true, "devices":[{"number":0, "prettyname": "HDMI", "defaultmixer": ""}, {"number":1, "prettyname": "SPDIF", "defaultmixer": ""}, {"number":2, "prettyname": "I2S", "defaultmixer": ""}],"type":"integrated"},
+     {"name": "RADXA-ZERO2", "multidevice": true, "devices":[{"number":0, "prettyname": "HDMI", "defaultmixer": ""}, {"number":1, "prettyname": "SPDIF", "defaultmixer": ""}, {"number":2, "prettyname": "I2S", "defaultmixer": ""}],"type":"integrated"} 
+  ]
+}
